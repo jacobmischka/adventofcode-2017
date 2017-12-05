@@ -1,3 +1,4 @@
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 import java.lang.Math
 
@@ -15,17 +16,140 @@ object Direction extends Enumeration {
 
 import Direction._
 
+class Spiral {
+	val contents = new ArrayBuffer[ArrayBuffer[Int]]()
+	addRing
+	
+	override def toString(): String = {
+		this.contents.toString()
+	}
+	
+	def addRing(): Unit = {
+		contents.append(new ArrayBuffer[Int]())
+	}
+	
+	def add(): Int = {
+		if (ringFull(currentRing, currentRingNum)) {
+			addRing
+		}
+		
+		var newVal = 0
+		
+		if (currentRingNum == 0 && currentRing.size == 0) {
+			newVal = 1
+		} else {
+			newVal += peek
+			
+			val ringWidth = getRingWidth(currentRingNum)
+			val ring = currentRing
+			val ringMax = maxLength(currentRingNum)
+			val prevIndex = currentIndex
+			val thisIndex = prevIndex + 1
+			val nextIndex = thisIndex + 1
+			
+			if (
+				prevIndex > 0
+				&& isCorner(prevIndex, ringWidth)
+			) {
+				newVal += ring(prevIndex - 1)
+			}
+			
+			if (nextIndex >= ringMax) {
+				newVal += ring(nextIndex % ringMax)
+			}
+			
+			if (
+				nextIndex + 1 >= ringMax
+				&& isCorner(nextIndex, ringWidth)
+			) {
+				newVal += ring((nextIndex + 1) % ringMax)
+			}
+			
+			val prevRingNum = currentRingNum - 1
+			val prevRing = contents(prevRingNum)
+			val prevRingMax = maxLength(prevRingNum)
+			
+			if (prevRingNum == 0) {
+				newVal += prevRing(0)
+			} else {
+				newVal += prevRing(thisIndex)
+				newVal += prevRing((thisIndex + prevRingMax - 1) % prevRingMax)
+				newVal += prevRing((thisIndex + prevRingMax - 2) % prevRingMax)
+			}
+		}
+		
+		currentRing.append(newVal)
+		newVal
+	}
+	
+	def currentIndex(): Int = {
+		currentRing.size - 1
+	}
+	
+	def peek(): Int = {
+		if (currentIndex < 0)
+			return 0
+			
+		val ring = currentRing
+		ring(currentIndex)
+	}
+	
+	def currentRingNum(): Int = {
+		this.contents.size - 1
+	}
+	
+	def currentRing(): ArrayBuffer[Int] = {
+		val ringNum = this.currentRingNum()
+		this.contents(ringNum)
+	}
+		
+	def getRingWidth(ringNum: Int): Int = {
+		(ringNum + 1) * 2 - 1
+	}
+	
+	def isCorner(index: Int, ringWidth: Int): Boolean = {
+		((index + 1) / (ringWidth - 1).toFloat) % 1 == 0
+	}
+	
+	def maxLength(ringNum: Int): Int = {
+		if (ringNum == 0)
+			return 1
+			
+		Math.pow(2, getRingWidth(ringNum)).toInt
+	}
+	
+	def ringFull(ring: ArrayBuffer[Int], ringNum: Int): Boolean = {
+		ring.size == maxLength(ringNum)
+	}
+}
+
 object Spiral {
 	def part1(): Unit = {
 		print("Part 1: ")
 		println(getNumMoves(getInput.toInt))
 	}
+	
+	def part2(): Unit = {
+		val spiral = new Spiral()
+		var i = 0
+		while (i < 12) {
+			spiral.add
+			i += 1
+		}
+		println(spiral)
+		
+		// print("Part 2: ")
+		// println()
+	}
+	
+	
 
 	def getNumMoves(target: Int): Int = {
 		val ringMoves = (getRingWidth(target) / 2.0).round
 		val ringSide = getRingSide(target)
 		val sideMoves = Math.abs(getSideCenter(getRingWidth(target), ringSide) - target).toInt
-		return (ringMoves + sideMoves - 1).toInt
+		
+		(ringMoves + sideMoves - 1).toInt
 	}
 
 	def getSideCenter(ringWidth: Int, side: Direction): Int = {
@@ -40,13 +164,14 @@ object Spiral {
 	}
 
 	def getMoveToCenter(pos: Int): Direction = {
-		return Direction.opposite(getRingSide(pos))
+		Direction.opposite(getRingSide(pos))
 	}
 
 	def getSideNum(target: Int): Float = {
 		val ringWidth = getRingWidth(target)
 		val ringMax = Math.pow(ringWidth, 2).toInt
-		return (ringMax - target) / (ringWidth - 1).toFloat
+		
+		(ringMax - target) / (ringWidth - 1).toFloat
 	}
 
 	def getRingSide(target: Int): Direction = {
@@ -57,7 +182,7 @@ object Spiral {
 			return Left
 		if (sideNum <= 3)
 			return Up
-		return Right
+		Right
 	}
 
 	def getRingWidth(target: Int): Int = {
@@ -65,14 +190,15 @@ object Spiral {
 		if (ring % 2 == 0)
 			ring += 1
 
-		return ring
+		ring
 	}
 
 	def getInput(): String = {
-		return Source.fromFile("./input/input.txt").mkString.trim
+		Source.fromFile("./input/input.txt").mkString.trim
 	}
 
 	def main(args: Array[String]): Unit = {
 		part1
+		part2
 	}
 }
