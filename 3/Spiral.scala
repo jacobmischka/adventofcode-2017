@@ -1,4 +1,4 @@
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.HashMap
 import scala.io.Source
 import java.lang.Math
 
@@ -16,110 +16,96 @@ object Direction extends Enumeration {
 
 import Direction._
 
-class Spiral {
-	val contents = new ArrayBuffer[ArrayBuffer[Int]]()
-	addRing
-	
-	override def toString(): String = {
-		this.contents.toString()
+class Grid {
+	val contents = new HashMap[Int, HashMap[Int, Int]]()
+	var radius = 0
+	var x = 0
+	var y = 0
+	var nextDirection = Right
+
+	set(0, 0, 1)
+
+	def set(x: Int, y: Int, value: Int): Unit = {
+		val col = contents.get(x) match {
+			case Some(col) => col
+			case None => {
+				new HashMap[Int, Int]()
+			}
+		}
+		col.update(y, value)
+		contents.update(x, col)
 	}
-	
+
+	def get(x: Int, y: Int): Int = {
+		contents.get(x) match {
+			case Some(col) => {
+				col.get(y) match {
+					case Some(value) => value
+					case None => 0
+				}
+			}
+			case None => 0
+		}
+	}
+
 	def addRing(): Unit = {
-		contents.append(new ArrayBuffer[Int]())
+		radius += 1
+		nextDirection = Up
 	}
-	
+
+	def posString(): String = {
+		"(" + x + ", " + y + ")"
+	}
+
+	def move(direction: Direction): Unit = {
+		direction match {
+			case Right => {
+				x += 1
+				if (x == radius + 1) {
+					addRing
+				}
+			}
+			case Up => {
+				y += 1
+				if (y == radius) {
+					nextDirection = Left
+				}
+			}
+			case Left => {
+				x -= 1
+				if (x == radius * -1) {
+					nextDirection = Down
+				}
+			}
+			case Down => {
+				y -= 1
+				if (y == radius * -1) {
+					nextDirection = Right
+				}
+			}
+		}
+	}
+
+	def adjacentSum(): Int = {
+		var sum = 0
+
+		sum += get(x, y + 1)
+		sum += get(x + 1, y + 1)
+		sum += get(x + 1, y)
+		sum += get(x + 1, y - 1)
+		sum += get(x, y - 1)
+		sum += get(x - 1, y - 1)
+		sum += get(x - 1, y)
+		sum += get(x - 1, y + 1)
+
+		sum
+	}
+
 	def add(): Int = {
-		if (ringFull(currentRing, currentRingNum)) {
-			addRing
-		}
-		
-		var newVal = 0
-		
-		if (currentRingNum == 0 && currentRing.size == 0) {
-			newVal = 1
-		} else {
-			newVal += peek
-			
-			val ringWidth = getRingWidth(currentRingNum)
-			val ring = currentRing
-			val ringMax = maxLength(currentRingNum)
-			val prevIndex = currentIndex
-			val thisIndex = prevIndex + 1
-			val nextIndex = thisIndex + 1
-			
-			if (
-				prevIndex > 0
-				&& isCorner(prevIndex, ringWidth)
-			) {
-				newVal += ring(prevIndex - 1)
-			}
-			
-			if (nextIndex >= ringMax) {
-				newVal += ring(nextIndex % ringMax)
-			}
-			
-			if (
-				nextIndex + 1 >= ringMax
-				&& isCorner(nextIndex, ringWidth)
-			) {
-				newVal += ring((nextIndex + 1) % ringMax)
-			}
-			
-			val prevRingNum = currentRingNum - 1
-			val prevRing = contents(prevRingNum)
-			val prevRingMax = maxLength(prevRingNum)
-			
-			if (prevRingNum == 0) {
-				newVal += prevRing(0)
-			} else {
-				newVal += prevRing(thisIndex)
-				newVal += prevRing((thisIndex + prevRingMax - 1) % prevRingMax)
-				newVal += prevRing((thisIndex + prevRingMax - 2) % prevRingMax)
-			}
-		}
-		
-		currentRing.append(newVal)
-		newVal
-	}
-	
-	def currentIndex(): Int = {
-		currentRing.size - 1
-	}
-	
-	def peek(): Int = {
-		if (currentIndex < 0)
-			return 0
-			
-		val ring = currentRing
-		ring(currentIndex)
-	}
-	
-	def currentRingNum(): Int = {
-		this.contents.size - 1
-	}
-	
-	def currentRing(): ArrayBuffer[Int] = {
-		val ringNum = this.currentRingNum()
-		this.contents(ringNum)
-	}
-		
-	def getRingWidth(ringNum: Int): Int = {
-		(ringNum + 1) * 2 - 1
-	}
-	
-	def isCorner(index: Int, ringWidth: Int): Boolean = {
-		((index + 1) / (ringWidth - 1).toFloat) % 1 == 0
-	}
-	
-	def maxLength(ringNum: Int): Int = {
-		if (ringNum == 0)
-			return 1
-			
-		Math.pow(2, getRingWidth(ringNum)).toInt
-	}
-	
-	def ringFull(ring: ArrayBuffer[Int], ringNum: Int): Boolean = {
-		ring.size == maxLength(ringNum)
+		move(nextDirection)
+		val value = adjacentSum
+		set(x, y, value)
+		value
 	}
 }
 
@@ -128,27 +114,25 @@ object Spiral {
 		print("Part 1: ")
 		println(getNumMoves(getInput.toInt))
 	}
-	
+
 	def part2(): Unit = {
-		val spiral = new Spiral()
-		var i = 0
-		while (i < 12) {
-			spiral.add
-			i += 1
+		val target = getInput.toInt
+		val grid = new Grid()
+
+		var addedVal = 0
+		while (addedVal < target) {
+			addedVal = grid.add
 		}
-		println(spiral)
-		
-		// print("Part 2: ")
-		// println()
+
+		print("Part 2: ")
+		println(addedVal)
 	}
-	
-	
 
 	def getNumMoves(target: Int): Int = {
 		val ringMoves = (getRingWidth(target) / 2.0).round
 		val ringSide = getRingSide(target)
 		val sideMoves = Math.abs(getSideCenter(getRingWidth(target), ringSide) - target).toInt
-		
+
 		(ringMoves + sideMoves - 1).toInt
 	}
 
@@ -170,7 +154,7 @@ object Spiral {
 	def getSideNum(target: Int): Float = {
 		val ringWidth = getRingWidth(target)
 		val ringMax = Math.pow(ringWidth, 2).toInt
-		
+
 		(ringMax - target) / (ringWidth - 1).toFloat
 	}
 
