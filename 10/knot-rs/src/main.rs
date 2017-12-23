@@ -23,29 +23,29 @@ fn reverse(arr: &mut [u32], start: usize, end: usize) {
 }
 
 pub fn knot_hash(input_lengths: &Vec<u32>) -> String {
-	let mut lengths: Vec<u32> = Vec::new();
-	lengths.clone_from_slice(input_lengths);
+	let mut lengths: Vec<u32> = input_lengths.clone();
 
 	// Magic numbers from instructions
 	for length in [17, 31, 73, 47, 23].iter() {
-		lengths.append(length as u32);
+		lengths.push(*length as u32);
 	}
 
-	let mut list = [0; LIST_SIZE];
+	let mut list: [u32; LIST_SIZE] = [0; LIST_SIZE];
 	for i in 0..LIST_SIZE {
-		list[i] = i;
+		list[i] = i as u32;
 	}
 
 	let mut skip = 0;
 	let mut position = 0;
 	for _ in 0..NUM_ROUNDS {
-		for length in lengths {
+		for length in &lengths {
 			reverse(&mut list, position as usize, (position + length - 1) as usize);
 
 			position += length + skip;
 			skip += 1;
 		}
 	}
+
 
 	const DENSE_HASH_SIZE: usize = LIST_SIZE / BLOCK_SIZE;
 	let mut dense_hash: [u8; DENSE_HASH_SIZE] = [0; DENSE_HASH_SIZE];
@@ -64,9 +64,9 @@ fn part1() {
 		.map(|s| s.parse::<u32>().unwrap())
 		.collect();
 
-	let mut list = [0; LIST_SIZE as usize];
+	let mut list = [0; LIST_SIZE];
 	for i in 0..LIST_SIZE {
-		list[i as usize] = i;
+		list[i] = i as u32;
 	}
 
 	let mut skip = 0;
@@ -83,8 +83,8 @@ fn part1() {
 
 fn part2() {
 	let input = get_input();
-	let lengths: Vec<u32> = input.trim().split(",")
-		.map(|s| s.parse::<u32>().unwrap())
+	let lengths: Vec<u32> = input.trim().bytes()
+		.map(|s| s as u32)
 		.collect();
 
 	println!("Part 2: {}", knot_hash(&lengths));
