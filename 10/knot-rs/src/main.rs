@@ -1,66 +1,17 @@
-extern crate hex;
+extern crate knot_rs;
 
 use std::fs::File;
 use std::io::Read;
 
-const LIST_SIZE: usize = 256;
-const NUM_ROUNDS: usize = 64;
-const BLOCK_SIZE: usize = 16;
-
-fn reverse(arr: &mut [u32], start: usize, end: usize) {
-	let mut start = start;
-	let mut end = end;
-	let len = arr.len();
-
-	while start <= end {
-		let tmp = arr[start % len];
-		arr[start % len] = arr[end % len];
-		arr[end % len] = tmp;
-
-		start += 1;
-		end -= 1;
-	}
-}
-
-pub fn knot_hash(input_lengths: &Vec<u32>) -> String {
-	let mut lengths: Vec<u32> = input_lengths.clone();
-
-	// Magic numbers from instructions
-	for length in [17, 31, 73, 47, 23].iter() {
-		lengths.push(*length as u32);
-	}
-
-	let mut list: [u32; LIST_SIZE] = [0; LIST_SIZE];
-	for i in 0..LIST_SIZE {
-		list[i] = i as u32;
-	}
-
-	let mut skip = 0;
-	let mut position = 0;
-	for _ in 0..NUM_ROUNDS {
-		for length in &lengths {
-			reverse(&mut list, position as usize, (position + length - 1) as usize);
-
-			position += length + skip;
-			skip += 1;
-		}
-	}
-
-
-	const DENSE_HASH_SIZE: usize = LIST_SIZE / BLOCK_SIZE;
-	let mut dense_hash: [u8; DENSE_HASH_SIZE] = [0; DENSE_HASH_SIZE];
-	for i in 0..DENSE_HASH_SIZE {
-		for j in 0..BLOCK_SIZE {
-			dense_hash[i] = dense_hash[i] ^ list[i * DENSE_HASH_SIZE + j] as u8;
-		}
-	}
-
-	hex::encode(dense_hash)
-}
+use knot_rs::{
+	reverse,
+	knot_hash,
+	LIST_SIZE
+};
 
 fn part1() {
 	let input = get_input();
-	let lengths: Vec<u32> = input.trim().split(",")
+	let lengths: Vec<u32> = input.split(",")
 		.map(|s| s.parse::<u32>().unwrap())
 		.collect();
 
@@ -83,11 +34,8 @@ fn part1() {
 
 fn part2() {
 	let input = get_input();
-	let lengths: Vec<u32> = input.trim().bytes()
-		.map(|s| s as u32)
-		.collect();
 
-	println!("Part 2: {}", knot_hash(&lengths));
+	println!("Part 2: {}", knot_hash(&input));
 }
 
 fn main() {
@@ -100,5 +48,5 @@ fn get_input() -> String {
 	let mut contents = String::new();
 	file.read_to_string(&mut contents).unwrap();
 
-	return contents;
+	contents.trim().to_string()
 }
