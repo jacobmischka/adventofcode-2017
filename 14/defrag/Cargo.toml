@@ -1,0 +1,9 @@
+[package]
+authors = ["Jacob Mischka <jacob@mischka.me>"]
+name = "defrag"
+version = "0.1.0"
+
+[dependencies]
+
+[dependencies.knot-rs]
+path = "../../10/knot-rs"
