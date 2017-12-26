@@ -63,15 +63,20 @@ fn part2() {
 	let input = get_input();
 	let num_steps = input.parse::<usize>().unwrap();
 
-	let mut buf: CircleBuffer<u32> = CircleBuffer::new(vec![0], num_steps);
-
+	let mut pos = 0;
+	let mut len = 1;
+	let mut answer = 0;
 	for i in 1..(NUM_ITERATIONS + 1) {
-		buf.insert(i);
+		pos = ((pos + num_steps) % len) + 1;
+
+		if pos == 1 {
+			answer = i;
+		}
+
+		len += 1;
 	}
 
-	let zero_pos = (&buf.buf).iter().position(|&x| x == 0).unwrap();
-
-	println!("Part 2: {}", buf.get(zero_pos + 1));
+	println!("Part 2: {}", answer);
 }
 
 fn main() {
